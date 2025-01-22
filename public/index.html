@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LockPass</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #3b5998;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        #password-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 350px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #3b5998;
+            margin-bottom: 20px;
+        }
+
+        #description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input {
+            width: calc(100% - 16px);
+            padding: 12px;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            color: #333;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input:focus {
+            border-color: #007bff;
+        }
+
+        #password-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #password-strength-bar {
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        #password-strength {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        #feedback-message {
+            color: red;
+            margin-bottom: 12px;
+        }
+
+        #crack-time {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        #password-length {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .password-requirements {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .password-requirements span {
+            color: red;
+            margin-left: 5px;
+        }
+
+        #generate-password,
+        #show-password,
+        #copy-to-clipboard {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 10px;
+            padding: 10px;
+            cursor: pointer;
+            color: #3b5998;
+            text-decoration: none;
+            background: none;
+            border: none;
+            font-size: 14px;
+            transition: color 0.3s ease-in-out;
+        }
+
+        #generate-password:hover,
+        #show-password:hover,
+        #copy-to-clipboard:hover {
+            color: #8b9dc3;
+        }
+
+        #show-password i,
+        #generate-password i,
+        #copy-to-clipboard i {
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            #password-container {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="particles-js"></div>
+
+    <div id="password-container">
+        <h1>LockPass</h1>
+        <p id="description">
+            LockPass is a tool designed to help you create strong, secure passwords. Use the form below to either generate a password or test the strength of your own.
+        </p>
+
+        <div id="password-wrapper">
+            <label for="password" id="password-label">Enter your password:</label>
+            <div>
+                <input type="password" id="password" oninput="checkPasswordStrength()" aria-labelledby="password-label" placeholder="Enter password">
+                <span id="password-length">Length: 0</span>
+            </div>
+        </div>
+
+        <a href="#" id="show-password" onclick="togglePasswordVisibility()">
+            <i class="fas fa-eye"></i> Show Password
+        </a>
+        <p id="password-strength">
+            <i class="fas fa-shield"></i> Password strength: <span id="strength-text">Weak</span>
+        </p>
+        <div id="password-strength-bar"></div>
+        <p id="feedback-message"></p>
+        <p id="crack-time"></p>
+        <div class="password-requirements">
+            Password should contain at least:
+            <ul>
+                <li>One uppercase letter <span id="uppercase" class="requirement">❌</span></li>
+                <li>One lowercase letter <span id="lowercase" class="requirement">❌</span></li>
+                <li>One number <span id="number" class="requirement">❌</span></li>
+                <li>One special character <span id="special-char" class="requirement">❌</span></li>
+            </ul>
+        </div>
+
+        <a href="#" id="generate-password" onclick="generatePassword()">
+            <i class="fas fa-key"></i> Generate Strong Password
+        </a>
+        <button id="copy-to-clipboard" onclick="copyToClipboard()">
+            <i class="fas fa-copy"></i> Copy to Clipboard
+        </button>
+
+        <script>
+            const passwordInput = document.getElementById('password');
+            const strengthText = document.getElementById('strength-text');
+            const feedbackMessage = document.getElementById('feedback-message');
+            const passwordLengthIndicator = document.getElementById('password-length');
+            const crackTimeIndicator = document.getElementById('crack-time');
+            const strengthBar = document.getElementById('password-strength-bar');
+            const uppercaseRequirement = document.getElementById('uppercase');
+            const lowercaseRequirement = document.getElementById('lowercase');
+            const numberRequirement = document.getElementById('number');
+            const specialCharRequirement = document.getElementById('special-char');
+
+            function checkPasswordStrength() {
+                const password = passwordInput.value;
+                const result = zxcvbn(password);
+
+                strengthText.textContent = getStrengthLabel(result.score);
+                updateStrengthBar(result.score);
+                feedbackMessage.textContent = result.feedback.suggestions.join(' ');
+
+                feedbackMessage.style.color = result.score >= 3 ? '#28a745' : '#dc3545';
+                passwordLengthIndicator.textContent = `Length: ${password.length}`;
+                crackTimeIndicator.textContent = `Estimated time to crack: ${result.crack_times_display.offline_slow_hashing_1e4_per_second}`;
+
+                validatePasswordRequirements(password);
+            }
+
+            function getStrengthLabel(score) {
+                switch (score) {
+                    case 0: return 'Very Weak';
+                    case 1: return 'Weak';
+                    case 2: return 'Moderate';
+                    case 3: return 'Strong';
+                    case 4: return 'Very Strong';
+                    default: return '';
+                }
+            }
+
+            function updateStrengthBar(score) {
+                const strengthLevels = [
+                    'red', 'orange', 'yellow', 'lightgreen', 'green'
+                ];
+                strengthBar.style.backgroundColor = strengthLevels[score];
+                strengthBar.style.width = (score + 1) * 20 + '%';
+            }
+
+            function validatePasswordRequirements(password) {
+                const uppercase = /[A-Z]/.test(password);
+                const lowercase = /[a-z]/.test(password);
+                const number = /\d/.test(password);
+                const specialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+                uppercaseRequirement.textContent = uppercase ? '✔️' : '❌';
+                lowercaseRequirement.textContent = lowercase ? '✔️' : '❌';
+                numberRequirement.textContent = number ? '✔️' : '❌';
+                specialCharRequirement.textContent = specialChar ? '✔️' : '❌';
+            }
+
+            function togglePasswordVisibility() {
+                const passwordType = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = passwordType;
+                document.getElementById('show-password').textContent = passwordType === 'password' ? 'Show Password' : 'Hide Password';
+            }
+
+            function generatePassword() {
+                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
+                const passwordLength = 12;
+                let generatedPassword = '';
+
+                for (let i = 0; i < passwordLength; i++) {
+                    const randomIndex = Math.floor(Math.random() * characters.length);
+                    generatedPassword += characters.charAt(randomIndex);
+                }
+
+                passwordInput.value = generatedPassword;
+                checkPasswordStrength();
+            }
+
+            function copyToClipboard() {
+                const passwordField = document.getElementById('password');
+                passwordField.select();
+                document.execCommand('copy');
+                alert('Password copied to clipboard!');
+                document.getElementById('copy-to-clipboard').textContent = 'Copied!';
+                setTimeout(() => {
+                    document.getElementById('copy-to-clipboard').textContent = 'Copy to Clipboard';
+                }, 2000);
+            }
+        </script>
+    </div>
+</body>
+
+</html>
