@@ -1,0 +1,32 @@
+# Node modules
+/node_modules/
+
+# Build output
+/build/
+dist/
+
+# Logs
+*.log
+
+# Dependency directories
+/pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+
+# Coverage reports
+coverage/
+
+# NPM package cache
+.npm/
