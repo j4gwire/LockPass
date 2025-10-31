@@ -12,4 +12,4 @@ LockPass is a tool designed to help you create strong, secure passwords. It allo
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/j4gwire/LockPass.git
+   git clone https://github.com/staxsum/LockPass.git
